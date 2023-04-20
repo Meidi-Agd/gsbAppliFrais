@@ -13,8 +13,8 @@ switch($action){
 		$mdp = trim(htmlentities($_REQUEST['mdp']));
 		$visiteur = $pdo->getInfosVisiteur($login,$mdp);
 		$comptable = $pdo->getInfosComptable($login,$mdp);
-		if(!is_array($comptable)){
-			if(!is_array( $visiteur))
+		if($comptable == false){
+			if($visiteur == false)
 			{
 				ajouterErreur("Login ou mot de passe incorrect");
 				include("vues/v_erreurs.php");
@@ -32,7 +32,6 @@ switch($action){
 		}
 		else
 		{
-			
 			$id = $comptable['id'];
 			$nom =  $comptable['nom'];
 			$prenom = $comptable['prenom'];

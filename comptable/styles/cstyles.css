@@ -246,24 +246,26 @@ body{
   table.listeLegere {
   /*    width:80%;*/
       margin-bottom : 0.5em;
+      min-height: 250px;
   }
   
   /* Tableaux quadrill�s utilis�s pour l'affichage de listes avec contenu l�ger*/ 
   table.listeLegere th, table.listeLegere td {
     border : dotted rgb(178,207,81) 0.1em;
     padding:0.5em;
-    vertical-align : top;
+    vertical-align : center;
     text-align : left;
   }
   
   table.listeLegere caption {
     font-size : 1.1em;
-    text-align : left;
+    text-align : center;
     margin-bottom : 0.3em;
   }
   table.listeLegere td {
-    vertical-align:top;
-    font-weight:normal;
+      vertical-align:center;
+      text-align: center;
+      font-weight:normal;
   }
   table.listeLegere th.eltForfait{
     color:black;

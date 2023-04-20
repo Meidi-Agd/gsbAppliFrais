@@ -25,7 +25,7 @@
         <tr>
             <th> <?php echo $dateModif?></th>
             <td class="qteForfait"><?php echo $idVisiteur?> </td>
-            <td class="qteForfait"><?php echo $montantValide?> </td>
+            <td class="qteForfait"><?php echo $montantValide?> € </td>
             <td class="qteForfait"><?php echo $justificatif?> </td>
             <td><a href="<?php echo $link;?>">Valider &#10004;</a></td>
 

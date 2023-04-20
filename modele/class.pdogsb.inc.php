@@ -17,7 +17,7 @@
 
 class PdoGsb{   		
       	private static $serveur='mysql:host=localhost';
-      	private static $bdd='dbname=gsb_frais';   		
+      	private static $bdd='dbname=gsbmvc';
       	private static $user='root' ;    		
       	private static $mdp='' ;	
 		private static $monPdo;
@@ -55,14 +55,14 @@ class PdoGsb{
  * @return l'id, le nom et le prénom sous la forme d'un tableau associatif 
 */
 	public function getInfosVisiteur($login, $mdp){
-		$req = "select visiteur.id as id, visiteur.nom as nom, visiteur.prenom as prenom, visiteur.mdp as mdp from visiteur 
-		where visiteur.login= :login";
+		$req = "select visiteur.id as id, visiteur.nom as nom, visiteur.prenom as prenom from visiteur 
+		where visiteur.login= :login AND visiteur.mdp = :mdp";
 		$idJeuRes = PdoGsb::$monPdo->prepare($req);
-		$idJeuRes->execute(array( ':login' => $login,));
-		$ligne = $idJeuRes->fetch(PDO::FETCH_ASSOC);
-		if (password_verify($mdp, $ligne['mdp']))
+		$idJeuRes->execute(array( ':login' => $login, ':mdp' => $mdp));
+
+		/*if (password_verify($mdp, $ligne['mdp']))
 		{
-			/* The password is correct. */
+			// The password is correct.
 			return $ligne;
 		}
 		try{
@@ -72,17 +72,23 @@ class PdoGsb{
 		catch(Exception $e)
 		{
 			return "";
+		}*/
+
+		try {
+			$ligne = $idJeuRes->fetch(PDO::FETCH_ASSOC);
+			return $ligne;
+		}catch(Exception $e){
+			return false;
 		}
 
 	}
 
 	public function getInfosComptable($login, $mdp){
-		$req = "select comptable.id as id, comptable.nom as nom, comptable.prenom as prenom, comptable.mdp as mdp from comptable 
-		where comptable.login= :login";
+		$req = "select comptable.id as id, comptable.nom as nom, comptable.prenom as prenom from comptable 
+		where comptable.login= :login AND comptable.mdp = :mdp";
 		$idJeuRes = PdoGsb::$monPdo->prepare($req);
-		$idJeuRes->execute(array( ':login' => $login));
-		$ligne = $idJeuRes->fetch(PDO::FETCH_ASSOC);
-		if(isset($ligne['mdp']))
+		$idJeuRes->execute(array( ':login' => $login, ':mdp' => $mdp));
+		/*if(isset($ligne['mdp']))
 		{
 			try{
 				password_verify($mdp, $ligne['mdp']);
@@ -92,6 +98,13 @@ class PdoGsb{
 			{
 				return "";
 			}
+		}*/
+
+		try {
+			$ligne = $idJeuRes->fetch(PDO::FETCH_ASSOC);
+			return $ligne;
+		}catch(Exception $e){
+			return false;
 		}
 
 	}
@@ -196,7 +209,61 @@ class PdoGsb{
 			$resultat = PdoGsb::$monPdo->prepare($req); 
 			$resultat->execute(array( ':idVisiteur' => $idVisiteur, ':mois' => $mois, ':idFrais' => $unIdFrais , ':qte' => $qte ));
 		}
-		
+
+		$req = PdoGsb::$monPdo->prepare("SELECT * FROM lignefraisforfait where lignefraisforfait.idVisiteur = :idVisiteur");
+		$req->execute(array(':idVisiteur' => $idVisiteur));
+		$resultLigneFrais = $req->fetchAll();
+
+		$req = PdoGsb::$monPdo->prepare("SELECT * FROM fraisforfait");
+		$req->execute();
+		$resultFraisForfait = $req->fetchAll();
+		$montantValide = 0;
+		foreach ($resultLigneFrais as $ligne)
+		{
+			if($ligne['idFraisForfait'] == "ETP")
+			{
+				foreach ($resultFraisForfait as $frais)
+				{
+					if ($frais["id"] == "ETP")
+					{
+						$montantValide += $frais['montant'] * $ligne['quantite'];
+					}
+				}
+			}
+
+			if($ligne['idFraisForfait'] == "KM")
+			{
+				foreach ($resultFraisForfait as $frais)
+				{
+					if ($frais["id"] == "KM")
+					{
+						$montantValide += $frais['montant'] * $ligne['quantite'];
+					}
+				}
+			}
+
+			if($ligne['idFraisForfait'] == "NUI")
+			{
+				foreach ($resultFraisForfait as $frais)
+				{
+					if ($frais["id"] == "NUI")
+					{
+						$montantValide += $frais['montant'] * $ligne['quantite'];
+					}
+				}
+			}
+			if($ligne['idFraisForfait'] == "REP")
+			{
+				foreach ($resultFraisForfait as $frais)
+				{
+					if ($frais["id"] == "REP")
+					{
+						$montantValide += $frais['montant'] * $ligne['quantite'];
+					}
+				}
+			}
+			$this->majMontantValide($idVisiteur, $mois, $montantValide);
+		}
 	}
 /**
  * met à jour le nombre de justificatifs de la table FicheFrais
@@ -211,6 +278,21 @@ class PdoGsb{
 		$resultat = PdoGsb::$monPdo->prepare($req); 
 		$resultat->execute(array( ':idVisiteur' => $idVisiteur, ':mois' => $mois, ':nbJustificatifs' => $nbJustificatifs ));	
 	}
+
+	/**
+	 * met à jour le montant valide de la table FicheFrais
+	 * pour le mois et le visiteur concerné
+
+	 * @param $idVisiteur
+	 * @param $mois sous la forme aaaamm
+	 */
+	public function majMontantValide($idVisiteur, $mois, $montantValide){
+		$req = "update fichefrais set montantValide = :montantValide 
+		where fichefrais.idVisiteur = :idVisiteur and fichefrais.mois = :mois";
+		$resultat = PdoGsb::$monPdo->prepare($req);
+		$resultat->execute(array( ':idVisiteur' => $idVisiteur, ':mois' => $mois, ':montantValide' => $montantValide ));
+	}
+
 /**
  * Teste si un visiteur possède une fiche de frais pour le mois passé en argument
  

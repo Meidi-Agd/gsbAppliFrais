@@ -19,8 +19,9 @@ switch($uc){
         include("controleurs/c_SuivrePaieFrais.php");break;
     }
     case 'deconnexion':{
-        session_destroy();
-        header('Location: ../index.php');break;
+        header('Location: ../index.php');
+        session_destroy();break;
+
     }
     default: {
         include('vues/v_accueil.php');break;
