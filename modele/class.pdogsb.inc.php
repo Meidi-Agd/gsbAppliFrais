@@ -54,11 +54,11 @@ class PdoGsb{
  * @param $mdp
  * @return l'id, le nom et le prénom sous la forme d'un tableau associatif 
 */
-	public function getInfosVisiteur($login, $mdp){
-		$req = "select visiteur.id as id, visiteur.nom as nom, visiteur.prenom as prenom from visiteur 
-		where visiteur.login= :login AND visiteur.mdp = :mdp";
+	public function getInfosVisiteur($login){
+		$req = "select visiteur.id as id, visiteur.nom as nom, visiteur.prenom as prenom, visiteur.mdp as mdp from visiteur 
+		where visiteur.login= :login";
 		$idJeuRes = PdoGsb::$monPdo->prepare($req);
-		$idJeuRes->execute(array( ':login' => $login, ':mdp' => $mdp));
+		$idJeuRes->execute(array( ':login' => $login));
 
 		/*if (password_verify($mdp, $ligne['mdp']))
 		{
@@ -83,11 +83,11 @@ class PdoGsb{
 
 	}
 
-	public function getInfosComptable($login, $mdp){
-		$req = "select comptable.id as id, comptable.nom as nom, comptable.prenom as prenom from comptable 
-		where comptable.login= :login AND comptable.mdp = :mdp";
+	public function getInfosComptable($login){
+		$req = "select comptable.id as id, comptable.nom as nom, comptable.prenom as prenom, comptable.mdp as mdp from comptable 
+		where comptable.login= :login";
 		$idJeuRes = PdoGsb::$monPdo->prepare($req);
-		$idJeuRes->execute(array( ':login' => $login, ':mdp' => $mdp));
+		$idJeuRes->execute(array( ':login' => $login));
 		/*if(isset($ligne['mdp']))
 		{
 			try{
@@ -287,7 +287,7 @@ class PdoGsb{
 	 * @param $mois sous la forme aaaamm
 	 */
 	public function majMontantValide($idVisiteur, $mois, $montantValide){
-		$req = "update fichefrais set montantValide = :montantValide 
+		$req = "update fichefrais set montantValide = :montantValide, idEtat = 'CR'
 		where fichefrais.idVisiteur = :idVisiteur and fichefrais.mois = :mois";
 		$resultat = PdoGsb::$monPdo->prepare($req);
 		$resultat->execute(array( ':idVisiteur' => $idVisiteur, ':mois' => $mois, ':montantValide' => $montantValide ));
@@ -457,13 +457,21 @@ class PdoGsb{
 	public function hashMdpAllUser()
 	{
 		$users = $this->getAllVisiteur();
-		foreach ($users as $user)
+		try {
+			foreach ($users as $user)
+			{
+				$mdp = password_hash($user['mdp'], PASSWORD_BCRYPT);
+				$id = $user['id'];
+				$strReq = "UPDATE comptable SET mdp = '$mdp' WHERE id = '$id'";
+				$req = PdoGsb::$monPdo->prepare($strReq);
+				$req->execute();
+			}
+			return true;
+		}
+		catch(Exception $e)
 		{
-			$mdp = password_hash('hello', PASSWORD_BCRYPT);
-			$id = $user['id'];
-			$strReq = "UPDATE `comptable` SET `mdp`= '$mdp' WHERE `id`='$id'";
-			$req = PdoGsb::$monPdo->prepare($strReq);
-			$req->execute();
+			echo $e;
+			return false;
 		}
 
 		return true;

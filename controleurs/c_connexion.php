@@ -11,8 +11,8 @@ switch($action){
 	case 'valideConnexion':{
 		$login = trim(htmlentities($_REQUEST['login']));
 		$mdp = trim(htmlentities($_REQUEST['mdp']));
-		$visiteur = $pdo->getInfosVisiteur($login,$mdp);
-		$comptable = $pdo->getInfosComptable($login,$mdp);
+		$visiteur = $pdo->getInfosVisiteur($login);
+		$comptable = $pdo->getInfosComptable($login);
 		if($comptable == false){
 			if($visiteur == false)
 			{
@@ -22,21 +22,39 @@ switch($action){
 			}
 			else
 			{
-				$id = $visiteur['id'];
-				$nom =  $visiteur['nom'];
-				$prenom = $visiteur['prenom'];
-				connecter($id,$nom,$prenom);
-				include("vues/v_sommaire.php");
-				include("vues/v_accueil.php");
+                if (password_verify($mdp, $visiteur['mdp']))
+                {
+                    $id = $visiteur['id'];
+                    $nom =  $visiteur['nom'];
+                    $prenom = $visiteur['prenom'];
+                    connecter($id,$nom,$prenom);
+                    include("vues/v_sommaire.php");
+                    include("vues/v_accueil.php");
+                }
+                else
+                {
+                    ajouterErreur("Login ou mot de passe incorrect");
+                    include("vues/v_erreurs.php");
+                    include("vues/v_connexion.php");
+                }
 			}
 		}
 		else
 		{
-			$id = $comptable['id'];
-			$nom =  $comptable['nom'];
-			$prenom = $comptable['prenom'];
-			connecter($id,$nom,$prenom);
-			header('Location: comptable/index.php');
+            if (password_verify($mdp, $comptable['mdp']))
+            {
+                $id = $comptable['id'];
+                $nom =  $comptable['nom'];
+                $prenom = $comptable['prenom'];
+                connecter($id,$nom,$prenom);
+                header('Location: comptable/index.php');
+            }
+            else
+            {
+                ajouterErreur("Login ou mot de passe incorrect");
+                include("vues/v_erreurs.php");
+                include("vues/v_connexion.php");
+            }
 		}
 
 		
