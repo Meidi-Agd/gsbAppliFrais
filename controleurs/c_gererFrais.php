@@ -1,9 +1,16 @@
 <?php
-include("vues/v_sommaire.php");
+if($_SESSION["role"] == "C")
+{
+    include("vues/v_sommaire.php");
+}
+if($_SESSION["role"] == "V")
+{
+    include("vues/v_sommaireV.php");
+}
 $idVisiteur = $_SESSION['idVisiteur'];
-$mois = getMois(date("d/m/Y"));
-$numAnnee =substr( $mois,0,4);
-$numMois =substr( $mois,4,2);
+$mois = getMois(date('d/m/Y'));
+$numAnnee =substr( $mois, 0, 4);
+$numMois =substr( $mois, 4, 2);
 $action = trim(htmlentities($_REQUEST['action']));
 switch($action){
 	case 'saisirFrais':{
@@ -24,10 +31,9 @@ switch($action){
 	  break;
 	}
 	case 'validerCreationFrais':{
-		$dateFrais = strip_tags(trim(html_entity_decode($_REQUEST['dateFrais'])));		
-		$libelle =  strip_tags(trim(html_entity_decode($_REQUEST['libelle'])));
-		//$libelle = trim(htmlentities($_REQUEST['libelle']));
-		$montant = strip_tags(trim(html_entity_decode($_REQUEST['montant'])));
+		$dateFrais = trim(htmlentities($_REQUEST['dateFrais']));
+		$libelle = trim(htmlentities($_REQUEST['libelle']));
+		$montant = trim(htmlentities($_REQUEST['montant']));
 		valideInfosFrais($dateFrais,$libelle,$montant);
 		if (nbErreurs() != 0 ){
 			include("vues/v_erreurs.php");

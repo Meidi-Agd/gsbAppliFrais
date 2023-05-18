@@ -1,9 +1,9 @@
-<div class="erreur">
-<div class="alert alert-danger">
+<div class ="erreur">
+<ul>
 <?php 
 foreach($_REQUEST['erreurs'] as $erreur)
 	{
-      echo $erreur;
+      echo "<li>$erreur</li>";
 	}
 ?>
-</div></div>
+</ul></div>
