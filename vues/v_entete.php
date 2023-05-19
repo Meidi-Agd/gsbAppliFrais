@@ -7,7 +7,8 @@
     <link rel="shortcut icon" type="image/x-icon" href="./images/favicon.ico" />
   </head>
   <?php
-  if(isset($_SESSION['role']) OR $_SESSION['role'] == "V" OR $_SESSION['role'] == "C")
+  $backgroundcolor = "#77AADD";
+  if(!empty($_SESSION['role']))
   {
     $role = $_SESSION['role'];
   }
@@ -16,10 +17,6 @@
     $role = "null";
   }
 
-  if($role == "null" OR $role == "V")
-  {
-    $backgroundcolor = "#77AADD";
-  }
 
   if ($role == "C")
   {

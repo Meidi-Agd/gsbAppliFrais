@@ -47,15 +47,15 @@ switch($action)
 	}
 
 	case'modifierFraisForfait' :{
-        $idVisiteur = filter_input(INPUT_POST, 'lstVisiteurs', FILTER_SANITIZE_STRING);
+        $idVisiteur = $_POST['lstVisiteurs'];
 		$lesVisiteurs = $pdo->getLesVisiteurs();
         $visiteurASelectionner=$idVisiteur;
 
-		$leMois = filter_input(INPUT_POST, 'lstMois', FILTER_SANITIZE_STRING);
+        $leMois = $_POST['lstMois'];
 		$lesMois = getLesDouzeDerniersMois($mois);
         $moisASelectionner=$leMois;
-		
-		$lesFrais = filter_input(INPUT_POST, 'lesFrais', FILTER_DEFAULT, FILTER_FORCE_ARRAY);
+
+		$lesFrais = $_POST['lesFrais'];
 		if (lesQteFraisValides($lesFrais)) 
 		{
             $pdo->majFraisForfait($idVisiteur, $leMois, $lesFrais);
@@ -150,7 +150,7 @@ switch($action)
 	}
 
 	case 'validerFrais':{
-        $idVisiteur = filter_input(INPUT_POST, 'lstVisiteurs', FILTER_SANITIZE_STRING);
+        $idVisiteur = $_POST['lstVisiteurs'];
         $lesVisiteurs=$pdo->getLesVisiteurs();
         $visiteurASelectionner=$idVisiteur;
         $leMois = filter_input(INPUT_POST, 'lstMois', FILTER_SANITIZE_STRING);
