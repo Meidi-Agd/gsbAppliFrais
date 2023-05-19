@@ -1,181 +1,175 @@
-﻿<?php
-if($_SESSION["role"] == "C")
+<?php
+// gestion du comptable
+include("vues/v_sommaireComptable.php");
+$idComptable = $_SESSION['cid'];
+$mois = getMois(date('d/m/Y'));
+$moisPrecedent = getMoisPrecedent($mois);
+$action = trim(htmlentities($_REQUEST['action']));
+switch($action)
 {
-	include("vues/v_sommaire.php");
-}
-if($_SESSION["role"] == "V")
-{
-	include("vues/v_sommaireV.php");
-}
-$action = $_REQUEST['action'];
-$idComptable = $_SESSION['idComptable'];
-switch($action){
-	case 'selectionnerVisiteur' :{
-		$lesVisiteurs = $pdo-> getLesVisiteurs($idComptable);
-		$lesCles = array_keys($lesVisiteurs);
-		$visiteurASelectionner = $lesCles[0];
-		include("vues/v_listeVisiteur.php");
-		break;
+	case'selectionnerVisiteur':{
+        $lesVisiteurs=$pdo->getLesVisiteurs();
+        $lesMois = getLesDouzeDerniersMois($mois);
+			include("vues/v_listeVisiteur.php");
+	break;
 	}
-	case 'selectionnerMois':{
-		echo var_dump($_SESSION['id']);
-		$leVisiteur = $_SESSION['id'];
-		$_SESSION['id'] = $leVisiteur;
-		$lesMois = $pdo->getLesMoisDisponibles($leVisiteur);
-		$lesCles = array_keys($lesMois);
-		if ($lesCles != null) {
-			$moisASelectionner = $lesCles[0];
-			include("vues/v_listeMois.php");
+
+	case'validerFicheVisiteur' :{
+        $idVisiteur = $_POST['lstVisiteurs'];
+		$lesVisiteurs = $pdo->getLesVisiteurs();
+        $visiteurASelectionner=$idVisiteur;
+
+		$leMois = $_POST['lstMois'];
+		$lesMois = getLesDouzeDerniersMois($mois);
+        $moisASelectionner=$leMois;
+
+        $lesFraisForfait = $pdo->getLesFraisForfait($idVisiteur, $leMois);
+        $lesFraisHorsForfait = $pdo->getLesFraisHorsForfait($idVisiteur, $leMois);
+        $lesInfosFicheFrais = $pdo->getLesInfosFicheFrais($idVisiteur, $leMois);
+
+		if(!is_array($lesInfosFicheFrais)){
+            ajouterErreur('Pas de fiche de frais pour ce visiteur ce mois');
+            include("vues/v_erreurs.php");
+			include("vues/v_listeVisiteur.php");
 		}
-		
-		break;
+		else{
+			$sommeHF = $pdo->montantHF($idVisiteur,$leMois);
+			$totalHF=$sommeHF[0][0];
+			$sommeFF=$pdo->montantFF($idVisiteur,$leMois);
+			$totalFF=$sommeFF[0][0];
+			$montantTotal=$totalHF+$totalFF;
+
+			$nbJustificatifs = $lesInfosFicheFrais['nbJustificatifs'];
+			
+			include("vues/v_listeFrais.php");
+		}
+	break;
 	}
-	case 'voirEtatFrais':{
-		$leMois = $_REQUEST['lstMois'];
-		$_SESSION['mois'] = $leMois;
-		$idVisiteur = $_SESSION['id'];
-		$lesMois=$pdo->getLesMoisDisponibles($idVisiteur);
-		$moisASelectionner = $leMois;
-		include("vues/v_listeMois.php");
+
+	case'modifierFraisForfait' :{
+        $idVisiteur = filter_input(INPUT_POST, 'lstVisiteurs', FILTER_SANITIZE_STRING);
+		$lesVisiteurs = $pdo->getLesVisiteurs();
+        $visiteurASelectionner=$idVisiteur;
+
+		$leMois = filter_input(INPUT_POST, 'lstMois', FILTER_SANITIZE_STRING);
+		$lesMois = getLesDouzeDerniersMois($mois);
+        $moisASelectionner=$leMois;
 		
-		$lesFraisHorsForfait = $pdo->getLesFraisHorsForfait($idVisiteur,$leMois);
-		$lesFraisForfait= $pdo->getLesFraisForfait($idVisiteur,$leMois);
-		$lesInfosFicheFrais = $pdo->getLesInfosFicheFrais($idVisiteur,$leMois);
-		$numAnnee =substr( $leMois,0,4);
-		$numMois =substr( $leMois,4,2);
-		$libEtat = $lesInfosFicheFrais['libEtat'];
-		$montantValide = $lesInfosFicheFrais['montantValide'];
+		$lesFrais = filter_input(INPUT_POST, 'lesFrais', FILTER_DEFAULT, FILTER_FORCE_ARRAY);
+		if (lesQteFraisValides($lesFrais)) 
+		{
+            $pdo->majFraisForfait($idVisiteur, $leMois, $lesFrais);
+
+            echo "La modification a bien été prise en compte.";
+		} 
+		else 
+		{
+            ajouterErreur('Les valeurs des frais doivent être numériques');
+            include("vues/v_erreurs.php");
+        }
+			   
+		$lesFraisForfait = $pdo->getLesFraisForfait($idVisiteur, $leMois);
+		$lesFraisHorsForfait = $pdo->getLesFraisHorsForfait($idVisiteur, $leMois);
+		$lesInfosFicheFrais = $pdo->getLesInfosFicheFrais($idVisiteur, $leMois);
+
+		$sommeHF = $pdo->montantHF($idVisiteur,$leMois);
+		$totalHF=$sommeHF[0][0];
+		$sommeFF=$pdo->montantFF($idVisiteur,$leMois);
+		$totalFF=$sommeFF[0][0];
+		$montantTotal=$totalHF+$totalFF;
+
 		$nbJustificatifs = $lesInfosFicheFrais['nbJustificatifs'];
-		$dateModif =  $lesInfosFicheFrais['dateModif'];
-		$dateModif =  dateAnglaisVersFrancais($dateModif);
-		include("vues/v_etatFrais.php");
+
+		include("vues/v_listeFrais.php");
+	break;
+	}
+	case'SupprimerFraisHorsForfait' :{
+        $idVisiteur = trim(htmlentities($_GET['idVisiteur']));
+		$lesVisiteurs = $pdo->getLesVisiteurs();
+        $visiteurASelectionner=$idVisiteur;
+
+		$leMois = trim(htmlentities($_GET['mois']));
+		$lesMois = getLesDouzeDerniersMois($mois);
+		$moisASelectionner=$leMois;
 		
-		break;
+		$idFrais = trim(htmlentities($_GET['idFrais']));
+		$pdo->supprimerFraisHorsForfait($idFrais);
+		echo "La modification a bien été prise en compte.";
+
+		$lesFraisForfait = $pdo->getLesFraisForfait($idVisiteur, $leMois);
+		$lesFraisHorsForfait = $pdo->getLesFraisHorsForfait($idVisiteur, $leMois);
+		$lesInfosFicheFrais = $pdo->getLesInfosFicheFrais($idVisiteur, $leMois);
+
+		$sommeHF = $pdo->montantHF($idVisiteur,$leMois);
+		$totalHF=$sommeHF[0][0];
+		$sommeFF=$pdo->montantFF($idVisiteur,$leMois);
+		$totalFF=$sommeFF[0][0];
+		$montantTotal=$totalHF+$totalFF;
+
+		$nbJustificatifs = $lesInfosFicheFrais['nbJustificatifs'];
+
+		include("vues/v_listeFrais.php");
+	break;
 	}
-	case'actualiser' : {
-	    $leMois = $_SESSION['mois'];
-	    $idVisiteur = $_SESSION['id'];
-	    $numAnnee =substr( $leMois,0,4);
-	    $numMois =substr( $leMois,4,2);
-	    $lesFraisForfait = $pdo->getLesFraisForfait($idVisiteur,$leMois);
-	    include("vues/v_listeFraisForfait.php");
-	    
-	    break;
+	case'reporterFraisHorsForfait' :{
+        $idVisiteur = trim(htmlentities($_GET['idVisiteur']));
+		$lesVisiteurs = $pdo->getLesVisiteurs();
+        $visiteurASelectionner=$idVisiteur;
+
+		$leMois = trim(htmlentities($_GET['mois']));
+		$lesMois = getLesDouzeDerniersMois($mois);
+		$moisASelectionner=$leMois;
+		
+		$idFrais = trim(htmlentities($_GET['idFrais']));
+
+		$libelleHF = trim(htmlentities($_GET['libelleHF']));
+		$dateHF = trim(htmlentities($_GET['dateHF']));
+		$montantHF = trim(htmlentities($_GET['montantHF']));
+
+		$leMoisSuivant=getMoisSuivant($leMois);      
+		if ($pdo->estPremierFraisMois($idVisiteur, $leMois)==true) {
+			$pdo->creeNouvellesLignesFrais($idVisiteur, $leMois);
+		}
+
+		$pdo->reporterLigneHF($leMoisSuivant, $idFrais);
+
+		$lesFraisForfait = $pdo->getLesFraisForfait($idVisiteur, $leMois);
+		$lesFraisHorsForfait = $pdo->getLesFraisHorsForfait($idVisiteur, $leMois);
+		$lesInfosFicheFrais = $pdo->getLesInfosFicheFrais($idVisiteur, $leMois);
+
+		$sommeHF = $pdo->montantHF($idVisiteur,$leMois);
+		$totalHF=$sommeHF[0][0];
+		$sommeFF=$pdo->montantFF($idVisiteur,$leMois);
+		$totalFF=$sommeFF[0][0];
+		$montantTotal=$totalHF+$totalFF;
+
+		$nbJustificatifs = $lesInfosFicheFrais['nbJustificatifs'];
+		
+		include("vues/v_listeFrais.php");
+	break;
 	}
-	case 'majFraisForfait':{
-	    $leMois = $_SESSION['mois'];
-	    $idVisiteur = $_SESSION['id'];
-	    $numAnnee =substr( $leMois,0,4);
-	    $numMois =substr( $leMois,4,2);
-	    $lesFraisForfait = $_REQUEST['lesFrais'];
-	    
-	    if(lesQteFraisValides($lesFraisForfait)){
-	        $pdo->majFraisForfait($idVisiteur,$leMois,$lesFraisForfait);
-	        /*$montant = $pdo->getLeMontantTotal($idVisiteur,$leMois);
-	        $pdo->majFicheFraisMontant($idVisiteur,$leMois,$montant);*/
-	    }
-	    else { 
-	        ajouterErreur("Les valeurs des frais doivent etre numeriques");
-	        include("vues/v_erreurs.php");
-	    }
-	    $lesMois=$pdo->getLesMoisDisponibles($idVisiteur);
-	    $moisASelectionner = $leMois;
-	    include("vues/v_listeMois.php");
-	    $lesFraisHorsForfait = $pdo->getLesFraisHorsForfait($idVisiteur,$leMois);
-	    $lesFraisForfait= $pdo->getLesFraisForfait($idVisiteur,$leMois);
-	    $lesInfosFicheFrais = $pdo->getLesInfosFicheFrais($idVisiteur,$leMois);
-	    $numAnnee =substr( $leMois,0,4);
-	    $numMois =substr( $leMois,4,2);
-	    $libEtat = $lesInfosFicheFrais['libEtat'];
-	    $montantValide = $lesInfosFicheFrais['montantValide'];
-	    $nbJustificatifs = $lesInfosFicheFrais['nbJustificatifs'];
-	    $dateModif =  $lesInfosFicheFrais['dateModif'];
-	    $dateModif =  dateAnglaisVersFrancais($dateModif);
-	    include("vues/v_etatFrais.php");
-	    
-	    break;
+
+	case 'validerFrais':{
+        $idVisiteur = filter_input(INPUT_POST, 'lstVisiteurs', FILTER_SANITIZE_STRING);
+        $lesVisiteurs=$pdo->getLesVisiteurs();
+        $visiteurASelectionner=$idVisiteur;
+        $leMois = filter_input(INPUT_POST, 'lstMois', FILTER_SANITIZE_STRING);
+        $lesMois = getLesDouzeDerniersMois($mois);
+        $moisASelectionner=$leMois;
+        $nbJustificatifs = filter_input(INPUT_POST, 'txtNbJustificatifs', FILTER_SANITIZE_STRING);
+        $etat='VA';
+        $pdo->majEtatFicheFrais($idVisiteur, $leMois, $etat);
+        $pdo->majNbJustificatifs($idVisiteur, $leMois, $nbJustificatifs);
+        $sommeHF=$pdo->montantHF($idVisiteur,$leMois);
+        $totalHF=$sommeHF[0][0];
+        $sommeFF=$pdo->montantFF($idVisiteur,$leMois);
+        $totalFF=$sommeFF[0][0];
+        $montantTotal=$totalHF+$totalFF;
+		$pdo->total($idVisiteur,$leMois,$montantTotal);
+		echo 'La fiche a bien été validée !';
+        include("vues/v_accueil.php");
+        break;
+
 	}
-	
-	case 'supprimerFrais':{
-        $idFrais = $_REQUEST['idFrais'];
-        $_SESSION['id'] = $idFrais;
-        $pdo->refuserFraisHorsForfait($idFrais);
-	
-	    $leMois = $_SESSION['mois'];
-	    $idVisiteur = $_SESSION['id'];
-	    $numAnnee =substr( $leMois,0,4);
-	    $numMois =substr( $leMois,4,2);
-	    
-	    /*$montant = $pdo->getLeMontantTotal($idVisiteur,$leMois);
-	    $pdo->majFicheFraisMontant($idVisiteur,$leMois,$montant);*/
-	    
-	    $lesMois=$pdo->getLesMoisDisponibles($idVisiteur);
-	    $moisASelectionner = $leMois;
-	    include("vues/v_listeMois.php");
-	    $lesFraisHorsForfait = $pdo->getLesFraisHorsForfait($idVisiteur,$leMois);
-	    $lesFraisForfait= $pdo->getLesFraisForfait($idVisiteur,$leMois);
-	    $lesInfosFicheFrais = $pdo->getLesInfosFicheFrais($idVisiteur,$leMois);
-	    $numAnnee =substr( $leMois,0,4);
-	    $numMois =substr( $leMois,4,2);
-	    $libEtat = $lesInfosFicheFrais['libEtat'];
-	    $montantValide = $lesInfosFicheFrais['montantValide'];
-	    $nbJustificatifs = $lesInfosFicheFrais['nbJustificatifs'];
-	    $dateModif =  $lesInfosFicheFrais['dateModif'];
-	    $dateModif =  dateAnglaisVersFrancais($dateModif);
-	    include("vues/v_etatFrais.php");
-	    ?> <meta http-equiv="refresh" content="0; url=index.php?uc=etatFrais&action=selectionnerVisiteur" /> <?php
-	    break;
-	}
-	
-	case 'repoterFraisHorsForfait' :{
-	    $idFrais =$_SESSION['id'];
-	    $leMois = $_SESSION['mois'];
-	    $idVisiteur = $_SESSION['id'];
-	    $numAnnee =substr( $leMois,0,4);
-	    $numMois =substr( $leMois,4,2);
-	    
-	    $pdo->supprimerFraisHorsForfait($idFrais);
-	    /*$montant = $pdo->getLeMontantTotal($idVisiteur,$leMois);
-	     $pdo->majFicheFraisMontant($idVisiteur,$leMois,$montant);*/
-	    
-	    $date = $_REQUEST['date'];
-	    $libelle = $_REQUEST['libelle'];
-	    $leMontant = $_REQUEST['montant'];
-	    
-	    $moisSuivant = moisSuivant($leMois);
-	    if ($pdo->dernierMoisSaisi($idVisiteur) == $leMois){
-	        
-	        $pdo->creeNouvellesLignesFrais($idVisiteur,$moisSuivant);
-	    }
-	    
-	    $pdo->creeNouveauFraisHorsForfait($idVisiteur,$moisSuivant,$libelle,$date,$leMontant);
-	    /*$montant = $pdo->getLeMontantTotal($idVisiteur,$moisSuivant);
-	     $pdo->majFicheFraisMontant($idVisiteur,$moisSuivant,$montant);*/
-	    
-	    $lesMois=$pdo->getLesMoisDisponibles($idVisiteur);
-	    $moisASelectionner = $leMois;
-	    include("vues/v_listeMois.php");
-	    $lesFraisHorsForfait = $pdo->getLesFraisHorsForfait($idVisiteur,$leMois);
-	    $lesFraisForfait= $pdo->getLesFraisForfait($idVisiteur,$leMois);
-	    $lesInfosFicheFrais = $pdo->getLesInfosFicheFrais($idVisiteur,$leMois);
-	    $numAnnee =substr( $leMois,0,4);
-	    $numMois =substr( $leMois,4,2);
-	    $libEtat = $lesInfosFicheFrais['libEtat'];
-	    $montantValide = $lesInfosFicheFrais['montantValide'];
-	    $nbJustificatifs = $lesInfosFicheFrais['nbJustificatifs'];
-	    $dateModif =  $lesInfosFicheFrais['dateModif'];
-	    $dateModif =  dateAnglaisVersFrancais($dateModif);
-	    include("vues/v_etatFrais.php");
-	    
-	    break;
-	}
-	
-	case'validerFrais' : {
-	    $leMois = $_SESSION['mois'];
-	    $idVisiteur = $_SESSION['id'];
-	    $pdo->majEtatFicheFrais($idVisiteur,$leMois,'VA');
-	    break;
-	}
-	
 }
 ?>

@@ -1,27 +1,35 @@
 <?php
-require_once("include/fct.inc.php");
-require_once ("include/class.pdogsb.inc.php");
-include("vues/v_entete.php") ;
 session_start();
+require_once("include/fct.inc.php");
+require_once ("modele/class.pdogsb.inc.php");
+include("vues/v_entete.php") ;
 $pdo = PdoGsb::getPdoGsb();
 $estConnecte = estConnecte();
+$estConnecteComptable = estConnecteComptable();
 if(!isset($_REQUEST['uc']) || !$estConnecte){
+	if(!isset($_REQUEST['uc']) || !$estConnecteComptable){
      $_REQUEST['uc'] = 'connexion';
-}	 
-$uc = $_REQUEST['uc'];
+}	
+} 
+$uc = trim(htmlentities($_REQUEST['uc']));
 switch($uc){
 	case 'connexion':{
 		include("controleurs/c_connexion.php");break;
 	}
+	case 'gererFrais' :{
+		include("controleurs/c_gererFrais.php");break;
+	}
 	case 'etatFrais' :{
-		include("controleurs/c_validerFrais.php");break; 
+		include("controleurs/c_etatFrais.php");break; 		
 	}
-	case 'suivreFrais' :{
-	    include("controleurs/c_SuivreFrais.php");break;
+	case 'validerFrais':{
+		include("controleurs/c_validerFrais.php");break;
+		
 	}
-    case 'gererFrais' :{
-        include("controleurs/c_gererFrais.php");break;
-    }
+	case 'suivrePaiement':{
+		include("controleurs/c_suivrePaiementFrais.php");break;
+	}
 }
 include("vues/v_pied.php") ;
 ?>
+

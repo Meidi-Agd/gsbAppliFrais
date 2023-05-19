@@ -11,7 +11,11 @@
  * @return vrai ou faux 
  */
 function estConnecte(){
-  return isset($_SESSION['idComptable']);
+  return isset($_SESSION['idVisiteur']);
+}
+
+function estConnecteComptable(){
+	return isset($_SESSION['cid']);
 }
 /**
  * Enregistre dans une variable session les infos d'un visiteur
@@ -20,11 +24,20 @@ function estConnecte(){
  * @param $nom
  * @param $prenom
  */
-function connecter($id,$nom,$prenom){
-	$_SESSION['id']= $id;
+function connecter($id,$nom,$prenom,){
+	$_SESSION['idVisiteur']= $id; 
 	$_SESSION['nom']= $nom;
 	$_SESSION['prenom']= $prenom;
+    $_SESSION['role'] = "V";
 }
+
+function connecterComptable($idComptable,$nomComptable,$prenomComptable){
+	$_SESSION['cid']= $idComptable; 
+	$_SESSION['cnom']= $nomComptable;
+	$_SESSION['cprenom']= $prenomComptable;
+    $_SESSION['role'] = "C";
+}
+
 /**
  * Détruit la session active
  */
@@ -64,6 +77,35 @@ function getMois($date){
 			$mois = "0".$mois;
 		}
 		return $annee.$mois;
+}
+
+function getMoisEnCours(){
+	$jour = date("d");
+	$mois = date("m");
+	$annee = date("y");
+	if($jour >= 20){
+		$mois = date("m");
+
+	}
+	else{
+		if($jour < 20 && $mois > 01){
+			$mois = date("m") -01;
+		}
+		else{
+			$mois = 12;
+			$annee = date("y") -0001;
+		}
+	}
+	if(strlen($mois) == 1){
+		$anneeEnCours = $annee."0".$mois;
+	}
+	else{
+		$anneeEnCours = $annee.$mois;
+
+	}
+	return ($anneeEnCours);
+
+	
 }
 
 /* gestion des erreurs*/
@@ -199,7 +241,68 @@ function nbErreurs(){
 	   return count($_REQUEST['erreurs']);
 	}
 }
-
-
-
+/**
+ * Fonction qui retourne le mois précédent un mois passé en paramètre
+ *
+ * @param String $mois Contient le mois à utiliser
+ *
+ * @return String le mois d'avant
+ */
+function getMoisPrecedent($mois){
+    $numAnnee = substr($mois, 0, 4);
+    $numMois = substr($mois, 4, 2);
+    if($numMois=='01'){
+        $numMois='12';
+        $numAnnee--;
+    }
+    else{
+        $numMois--;
+    }
+     if (strlen($numMois) == 1) {//strlen=verifie le nombre de caractères. Ex:si mois=6, on va mettre 06.
+        $numMois = '0' . $numMois;
+        }
+    return $numAnnee.$numMois;
+}
+/**
+ * Fonction qui retourne le mois suivant un mois passé en paramètre
+ *
+ * @param String $mois Contient le mois à utiliser
+ *
+ * @return String le mois d'après
+ */
+function getMoisSuivant($mois)
+{
+    $numAnnee = substr($mois, 0, 4);
+    $numMois = substr($mois, 4, 2);
+    if ($numMois == '12') {
+        $numMois = '01';
+        $numAnnee++;
+    } else {
+        $numMois++;
+    }
+    if (strlen($numMois) == 1) {
+        $numMois = '0' . $numMois;
+    }
+    return $numAnnee . $numMois;
+}
+/**
+ * Fonction qui retourne les 12 derniers mois
+ * 
+ * @param String $mois   Contient le mois à utiliser
+ * @return String        Les 12 mois d'avant
+ */
+function getLesDouzeDerniersMois($mois){
+    $lesMois= array();
+    for ($k=0;$k<=12;$k++){
+        $mois= getMoisPrecedent($mois);
+        $numAnnee = substr($mois,0,4);
+        $numMois = substr($mois,4,2);
+        $lesMois [] = array(
+            'mois'=>$mois,
+            'numMois'=> $numMois,
+            'numAnnee'=> $numAnnee
+        );
+    }
+    return $lesMois;
+}
 ?>

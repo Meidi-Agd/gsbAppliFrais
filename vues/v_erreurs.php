@@ -1,4 +1,4 @@
-<div class ="erreur">
+<div class="erreur">
 <ul>
 <?php 
 foreach($_REQUEST['erreurs'] as $erreur)

@@ -1,13 +1,5 @@
 ﻿<?php
-if($_SESSION["role"] == "C")
-{
-    include("vues/v_sommaire.php");
-}
-if($_SESSION["role"] == "V")
-{
-    include("vues/v_sommaireV.php");
-}
-
+include("vues/v_sommaire.php");
 $action = trim(htmlentities($_REQUEST['action']));
 $idVisiteur = $_SESSION['idVisiteur'];
 switch($action){

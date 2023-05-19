@@ -1,1 +1,0 @@
-<h3>La fiche du visiteur <?php echo $idVisiteur?> du mois <?php echo $leMois ?> a ete rembourse !</h3>
